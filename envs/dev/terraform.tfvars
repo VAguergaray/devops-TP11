@@ -1,7 +1,7 @@
 environment       = "dev"
 project_name      = "devops-portfolio"
 postgres_db       = "notesdb"
-backend_replicas  = 1
+backend_replicas  = 2
 frontend_port     = 8088
 backend_port      = 5001
 network_subnet    = "172.20.0.0/16"
