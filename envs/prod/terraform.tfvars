@@ -1,0 +1,9 @@
+# La password NO va acá: export TF_VAR_postgres_password="..."
+environment       = "prod"
+project_name      = "devops-portfolio"
+postgres_db       = "notesdb"
+backend_replicas  = 3
+frontend_port     = 80
+backend_port      = 5001
+network_subnet    = "172.30.0.0/16"
+monitoring_subnet = "172.31.0.0/16"
