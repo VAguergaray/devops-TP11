@@ -28,7 +28,6 @@ variable "postgres_password" {
   description = "Contraseña de Postgres"
   type        = string
   sensitive   = true # no se muestra en logs ni en plan
-  default     = "devops123"
 }
 
 variable "postgres_db" {

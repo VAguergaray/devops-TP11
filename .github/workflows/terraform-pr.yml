@@ -1,0 +1,69 @@
+name: Terraform PR - Plan
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: terraform-prod
+  cancel-in-progress: false
+
+jobs:
+  terraform-plan:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, linux, x64]
+    env:
+      TF_VAR_postgres_password: ${{ secrets.TF_VAR_POSTGRES_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.1
+          terraform_wrapper: false
+
+      - name: Terraform Format
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: |
+          terraform init -reconfigure \
+            -backend-config="path=/home/valaxx/.terraform-state/devops-TP11/prod/terraform.tfstate"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan -no-color \
+            -var-file="envs/prod/terraform.tfvars" \
+            -out=tfplan
+          terraform show -no-color tfplan > plan.txt
+
+      - name: Publish Plan on Pull Request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const plan = fs.readFileSync('plan.txt', 'utf8');
+            const body = `### Terraform Plan - PROD\n\n\`\`\`terraform\n${plan.slice(0, 60000)}\n\`\`\``;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      - name: Cleanup
+        if: always()
+        run: rm -f tfplan plan.txt

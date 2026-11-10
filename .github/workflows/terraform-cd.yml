@@ -1,0 +1,42 @@
+name: Terraform CD - Apply
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-prod
+  cancel-in-progress: false
+
+jobs:
+  terraform-apply:
+    runs-on: [self-hosted, linux, x64]
+    env:
+      TF_VAR_postgres_password: ${{ secrets.TF_VAR_POSTGRES_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.17.1
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: |
+          terraform init -reconfigure \
+            -backend-config="path=/home/valaxx/.terraform-state/devops-TP11/prod/terraform.tfstate"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve \
+            -var-file="envs/prod/terraform.tfvars"
